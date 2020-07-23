@@ -27,6 +27,19 @@ final class SendRequestToScout
     /** @return mixed */
     public function handle(Request $request, Closure $next)
     {
+        try
+        {
+            $samplingPer = (int)env('SCOUT_SAMPLING_PER', 10);
+            if (rand(1, $samplingPer) !== 1)
+            {
+                $this->agent->ignore();
+                $this->logger->debug('SendRequestToScout skipped by sampling');
+                return $next($request);
+            }
+        } catch (Throwable $e) {
+            $this->logger->debug('SendRequestToScout failed: ' . $e->getMessage(), ['exception' => $e]);
+        }
+        
         $this->agent->connect();
 
         $response = $next($request);
