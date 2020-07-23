@@ -1,5 +1,5 @@
 {
-    "name": "scoutapp/scout-apm-laravel",
+    "name": "mamitech/scout-apm-laravel",
     "description": "Scout Application Performance Monitoring Agent - https://scoutapm.com",
     "homepage": "https://scoutapm.com/",
     "license": "MIT",
