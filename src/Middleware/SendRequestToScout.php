@@ -29,7 +29,7 @@ final class SendRequestToScout
     {
         try
         {
-            $samplingPer = (int)env('SCOUT_SAMPLING_PER', 10);
+            $samplingPer = (int) env('SCOUT_SAMPLING_PER', 10);
             if (rand(1, $samplingPer) !== 1)
             {
                 $this->agent->ignore();
@@ -45,6 +45,8 @@ final class SendRequestToScout
         $response = $next($request);
 
         try {
+            $this->addParams($request);
+            $this->addRequestBody($request);
             $this->agent->send();
             $this->logger->debug('SendRequestToScout succeeded');
         } catch (Throwable $e) {
@@ -52,5 +54,23 @@ final class SendRequestToScout
         }
 
         return $response;
+    }
+
+    private function addParams(Request $request) : void
+    {
+        foreach ($request->input() as $key => $value) {
+            $this->agent->addContext($key, json_encode($value));
+        }
+    }
+
+    private function addRequestBody(Request $request) : void
+    {
+        if (is_null($request->getContent()) || $request->getContent() == '') {
+            return;
+        }
+        $requestBody = json_decode($request->getContent(), true);
+        foreach ($requestBody as $key => $value) {
+            $this->agent->addContext($key, json_encode($value));
+        }
     }
 }
