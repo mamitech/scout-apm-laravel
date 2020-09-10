@@ -46,7 +46,6 @@ final class SendRequestToScout
 
         try {
             $this->addParams($request);
-            $this->addRequestBody($request);
             $this->agent->send();
             $this->logger->debug('SendRequestToScout succeeded');
         } catch (Throwable $e) {
@@ -59,18 +58,7 @@ final class SendRequestToScout
     private function addParams(Request $request) : void
     {
         foreach ($request->input() as $key => $value) {
-            $this->agent->addContext($key, json_encode($value));
-        }
-    }
-
-    private function addRequestBody(Request $request) : void
-    {
-        if (is_null($request->getContent()) || $request->getContent() == '') {
-            return;
-        }
-        $requestBody = json_decode($request->getContent(), true);
-        foreach ($requestBody as $key => $value) {
-            $this->agent->addContext($key, json_encode($value));
+            $this->agent->addContext('params.' . $key, json_encode($value));
         }
     }
 }
