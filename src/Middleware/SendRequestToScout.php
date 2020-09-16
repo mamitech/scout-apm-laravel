@@ -57,6 +57,10 @@ final class SendRequestToScout
 
     private function addParams(Request $request) : void
     {
+        $addParamsEnabled = env('SCOUT_CUSTOM_CONTEXT_ENABLED', false);
+        if (!$addParamsEnabled) {
+            return;
+        }
         foreach ($request->input() as $key => $value) {
             $this->agent->addContext('params.' . $key, json_encode($value));
         }
