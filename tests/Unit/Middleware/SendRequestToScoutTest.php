@@ -45,6 +45,7 @@ final class SendRequestToScoutTest extends TestCase
     public function tearDown() : void
     {
         putenv('SCOUT_SAMPLING_PER');
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED');
         parent::tearDown();
     }
 
@@ -95,11 +96,36 @@ final class SendRequestToScoutTest extends TestCase
 
     public function testAddContextFromRequestInput() : void
     {
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED=true');
+
         $request = new Request();
         $request->replace(['id' => 12]);
         $expectedResponse = new Response();
 
         $this->agent->expects(self::once())
+            ->method('addContext')
+            ->with('params.id', "12");
+
+        self::assertSame(
+            $expectedResponse,
+            $this->middleware->handle(
+                $request,
+                static function () use ($expectedResponse) {
+                    return $expectedResponse;
+                }
+            )
+        );
+    }
+
+    public function testCustomContextDisabled() : void
+    {
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED=false');
+        
+        $request = new Request();
+        $request->replace(['id' => 12]);
+        $expectedResponse = new Response();
+
+        $this->agent->expects(self::never())
             ->method('addContext')
             ->with('params.id', "12");
 
