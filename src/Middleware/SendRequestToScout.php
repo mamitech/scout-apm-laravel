@@ -61,6 +61,7 @@ final class SendRequestToScout
         if (!$addParamsEnabled) {
             return;
         }
+        $this->agent->addContext('request_body', json_encode($request->input()));
         foreach ($request->input() as $key => $value) {
             $this->agent->addContext('params.' . $key, json_encode($value));
         }
