@@ -38,6 +38,15 @@ final class SendRequestToScoutTest extends TestCase
             $this->agent,
             new FilteredLogLevelDecorator($this->logger, LogLevel::DEBUG)
         );
+
+        putenv('SCOUT_SAMPLING_PER=1');
+    }
+
+    public function tearDown() : void
+    {
+        putenv('SCOUT_SAMPLING_PER');
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED');
+        parent::tearDown();
     }
 
     public function testHandleSendsRequestToScout() : void
@@ -47,7 +56,7 @@ final class SendRequestToScoutTest extends TestCase
         $this->agent->expects(self::once())
             ->method('send');
 
-        $this->logger->expects(self::once())
+        $this->logger->expects(self::atLeastOnce())
             ->method('log')
             ->with(LogLevel::DEBUG, '[Scout] SendRequestToScout succeeded');
 
@@ -70,7 +79,7 @@ final class SendRequestToScoutTest extends TestCase
             ->method('send')
             ->willThrowException(new Exception('oh no'));
 
-        $this->logger->expects(self::once())
+        $this->logger->expects(self::atLeastOnce())
             ->method('log')
             ->with(LogLevel::DEBUG, '[Scout] SendRequestToScout failed: oh no');
 
@@ -78,6 +87,52 @@ final class SendRequestToScoutTest extends TestCase
             $expectedResponse,
             $this->middleware->handle(
                 new Request(),
+                static function () use ($expectedResponse) {
+                    return $expectedResponse;
+                }
+            )
+        );
+    }
+
+    public function testAddContextFromRequestInput() : void
+    {
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED=true');
+
+        $request = new Request();
+        $request->replace(['id' => 12]);
+        $expectedResponse = new Response();
+
+        $this->agent->expects(self::once())
+            ->method('addContext')
+            ->with('params.id', "12");
+
+        self::assertSame(
+            $expectedResponse,
+            $this->middleware->handle(
+                $request,
+                static function () use ($expectedResponse) {
+                    return $expectedResponse;
+                }
+            )
+        );
+    }
+
+    public function testCustomContextDisabled() : void
+    {
+        putenv('SCOUT_CUSTOM_CONTEXT_ENABLED=false');
+        
+        $request = new Request();
+        $request->replace(['id' => 12]);
+        $expectedResponse = new Response();
+
+        $this->agent->expects(self::never())
+            ->method('addContext')
+            ->with('params.id', "12");
+
+        self::assertSame(
+            $expectedResponse,
+            $this->middleware->handle(
+                $request,
                 static function () use ($expectedResponse) {
                     return $expectedResponse;
                 }
