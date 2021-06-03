@@ -9,6 +9,9 @@ use Illuminate\Http\Request;
 use Scoutapm\Logger\FilteredLogLevelDecorator;
 use Scoutapm\ScoutApmAgent;
 use Throwable;
+use function env;
+use function json_encode;
+use function rand;
 
 final class SendRequestToScout
 {
@@ -27,19 +30,18 @@ final class SendRequestToScout
     /** @return mixed */
     public function handle(Request $request, Closure $next)
     {
-        try
-        {
+        try {
             $samplingPer = (int) env('SCOUT_SAMPLING_PER', 10);
-            if (rand(1, $samplingPer) !== 1)
-            {
+            if (rand(1, $samplingPer) !== 1) {
                 $this->agent->ignore();
                 $this->logger->debug('SendRequestToScout skipped by sampling');
+
                 return $next($request);
             }
         } catch (Throwable $e) {
             $this->logger->debug('SendRequestToScout failed: ' . $e->getMessage(), ['exception' => $e]);
         }
-        
+
         $this->agent->connect();
 
         $response = $next($request);
@@ -58,7 +60,7 @@ final class SendRequestToScout
     private function addParams(Request $request) : void
     {
         $addParamsEnabled = env('SCOUT_CUSTOM_CONTEXT_ENABLED', false);
-        if (!$addParamsEnabled) {
+        if (! $addParamsEnabled) {
             return;
         }
         $this->agent->addContext('request_body', json_encode($request->input()));

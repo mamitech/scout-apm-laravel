@@ -14,6 +14,7 @@ use Psr\Log\LogLevel;
 use Scoutapm\Laravel\Middleware\SendRequestToScout;
 use Scoutapm\Logger\FilteredLogLevelDecorator;
 use Scoutapm\ScoutApmAgent;
+use function putenv;
 
 /** @covers \Scoutapm\Laravel\Middleware\SendRequestToScout */
 final class SendRequestToScoutTest extends TestCase
@@ -104,7 +105,7 @@ final class SendRequestToScoutTest extends TestCase
 
         $this->agent->expects(self::once())
             ->method('addContext')
-            ->with('params.id', "12");
+            ->with('params.id', '12');
 
         self::assertSame(
             $expectedResponse,
@@ -120,14 +121,14 @@ final class SendRequestToScoutTest extends TestCase
     public function testCustomContextDisabled() : void
     {
         putenv('SCOUT_CUSTOM_CONTEXT_ENABLED=false');
-        
+
         $request = new Request();
         $request->replace(['id' => 12]);
         $expectedResponse = new Response();
 
         $this->agent->expects(self::never())
             ->method('addContext')
-            ->with('params.id', "12");
+            ->with('params.id', '12');
 
         self::assertSame(
             $expectedResponse,
